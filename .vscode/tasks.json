@@ -1,0 +1,25 @@
+{
+    // Runs automatically before each debug launch (see launch.json's
+    // "preLaunchTask") so dependencies are always installed into whatever
+    // interpreter VS Code currently has selected -- the same one the
+    // debugger itself uses -- instead of a fresh checkout failing with
+    // ModuleNotFoundError the first time someone presses Run.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "sentrynet: install dependencies",
+            "type": "shell",
+            "command": "${command:python.interpreterPath}",
+            "args": ["-m", "pip", "install", "-q", "-r", "requirements.txt"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}

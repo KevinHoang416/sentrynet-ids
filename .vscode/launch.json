@@ -1,0 +1,70 @@
+{
+    // Requires the "Python" extension (ms-python.python) -- VS Code will
+    // prompt to install it automatically since it's listed in
+    // .vscode/extensions.json. Once installed, open this folder in VS
+    // Code, go to Run and Debug (Ctrl+Shift+D / Cmd+Shift+D), pick a
+    // configuration from the dropdown, and press the green Run button
+    // (or just F5 for whichever one is selected).
+    //
+    // Every configuration below runs "sentrynet: install dependencies"
+    // (tasks.json) first, which pip-installs requirements.txt into
+    // whatever Python interpreter VS Code currently has selected -- the
+    // same one the debugger itself uses -- so a completely fresh checkout
+    // works on the first press of Run, with no manual `pip install` step
+    // and no risk of installing into a different environment than the one
+    // that actually runs the app. If you have multiple Python
+    // installs/environments (conda, homebrew, etc.), use "Python: Select
+    // Interpreter" from the command palette to pick the one you want
+    // used for both the install and the run.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Default: just run it. Opens the web dashboard in your
+            // browser with nothing running yet -- pick "Live interface"
+            // or "Pcap file" and click Start Scan right from the page.
+            // No admin/root privileges needed to reach this point; if you
+            // then pick "Live interface" and it doesn't work, that's an
+            // OS permissions thing (see README's Install section), not a
+            // VS Code one -- live packet capture needs elevated
+            // privileges no matter how it's launched.
+            "name": "Sentrynet: Web Dashboard",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run.py",
+            "args": ["--web"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "sentrynet: install dependencies"
+        },
+        {
+            // A guaranteed-to-work demo: replays the bundled sample.pcap
+            // at its original recorded pace, so every detector (including
+            // traffic_spike, which needs real-time-paced packets to make
+            // sense of) fires within about 30 seconds -- no live network,
+            // no root, no attack tools required.
+            "name": "Sentrynet: Web Dashboard + sample.pcap demo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run.py",
+            "args": ["--pcap", "sample.pcap", "--realtime-replay", "--web"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "sentrynet: install dependencies"
+        },
+        {
+            // Runs the whole test suite under the debugger -- breakpoints
+            // in detector/engine/web code will be hit while tests run.
+            "name": "Sentrynet: Run tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["tests", "-v"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "sentrynet: install dependencies"
+        }
+    ]
+}

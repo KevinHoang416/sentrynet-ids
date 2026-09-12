@@ -1,0 +1,66 @@
+# Example sentrynet configuration.
+# Copy this file, edit as needed, and run with: sentrynet --config my_config.yaml
+
+# Network interface to sniff on. Leave null (or omit) to let Scapy pick a
+# default. Ignored when replaying a pcap with --pcap.
+interface: null
+
+# Optional BPF filter to restrict captured packets, e.g. "not port 22"
+bpf_filter: ""
+
+# IPs to treat as your default gateway(s). An ARP conflict on one of these
+# is flagged CRITICAL instead of HIGH, since it means someone may be
+# man-in-the-middling your whole segment, not just spoofing one host.
+gateway_ips:
+  - 192.168.1.1
+
+detectors:
+  port_scan:
+    enabled: true
+    window_seconds: 10       # rolling window for "distinct ports touched"
+    port_threshold: 15       # distinct ports within the window to trigger
+    cooldown_seconds: 30     # don't re-alert on the same source this often
+
+  arp_spoof:
+    enabled: true
+    cooldown_seconds: 15
+
+  traffic_spike:
+    enabled: true
+    interval_seconds: 5      # bucket size for rate measurement
+    zscore_threshold: 3.5    # how many std-devs above baseline counts as a spike
+    min_packets: 20          # ignore intervals with fewer packets than this
+    ewma_alpha: 0.3          # baseline responsiveness (higher = adapts faster)
+    min_stddev: 1.0          # floor on baseline pkt/s stddev, so a very flat
+                              # or fresh baseline can still register a spike
+
+  ml_anomaly:
+    # Experimental unsupervised detector (Isolation Forest). Requires
+    # scikit-learn + numpy. Off by default -- it needs a warm-up period on
+    # YOUR network's normal traffic before its alerts mean anything, and
+    # every alert is a low-confidence statistical outlier, not a labeled
+    # attack. Turn it on in a lab, watch what it flags on known-clean
+    # traffic, and tune `contamination` before trusting it anywhere real.
+    enabled: false
+    buffer_size: 2000
+    retrain_every: 200
+    contamination: 0.02
+    warmup: 500
+
+alerting:
+  console: true
+  json_path: null   # e.g. "alerts.jsonl"
+  syslog: null      # e.g. {host: 127.0.0.1, port: 514}
+
+dashboard:
+  enabled: false
+
+web:
+  # Local browser dashboard at http://<host>:<port>/, live-polling alerts
+  # and session stats, with Start/Stop scan controls in the page itself.
+  # No authentication -- keep host at 127.0.0.1 unless you deliberately
+  # want it reachable from other machines.
+  enabled: false
+  host: 127.0.0.1
+  port: 8787
+  open_browser: true  # auto-open a browser tab when the dashboard starts

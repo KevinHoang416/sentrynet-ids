@@ -1,0 +1,17 @@
+# Render "Blueprint" -- lets you deploy the public demo in a couple of
+# clicks instead of configuring a web service by hand. In the Render
+# dashboard: New -> Blueprint -> pick this GitHub repo -> Apply. See the
+# README's "Deploy a free public demo" section for the manual-setup
+# equivalent and for what this actually does (loops sample.pcap forever;
+# see render_demo.py).
+services:
+  - type: web
+    name: sentrynet-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python render_demo.py
+    envVars:
+      - key: SENTRYNET_DEMO_MODE
+        value: "1"
+    autoDeployTrigger: commit

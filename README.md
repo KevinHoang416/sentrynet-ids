@@ -230,6 +230,34 @@ dashboard, and it stays up after a pcap replay finishes or a live capture
 is stopped, so you can review results or start another scan at your own
 pace.
 
+## Deploy a free public demo
+
+Live packet capture needs raw-socket access and an actual network to
+sniff, neither of which a free hosting container gives you -- so a
+"hosted Sentrynet" only makes sense as a demo that loops the bundled
+`sample.pcap` on a public link (e.g. for a resume or portfolio), not as
+real monitoring. [Render's free tier](https://render.com) fits this well:
+no credit card, 750 free instance-hours/month (enough to run all month),
+though it spins down after 15 minutes with no traffic and takes about a
+minute to wake back up on the next visit.
+
+`render_demo.py` is a separate entrypoint built for exactly this -- it's
+not what you run locally (`run.py` is). It binds to `0.0.0.0` on
+whatever port Render assigns, loops `sample.pcap` forever so the
+dashboard is never sitting idle, and sets `SENTRYNET_DEMO_MODE=1`, which
+makes the page show a banner explaining itself and disables the "Live
+interface" option (since it can't work there anyway). Clicking Stop on
+the hosted demo just makes the next auto-restart arrive a few seconds
+early -- the controls are real, not for show.
+
+To deploy: push this repo to your own GitHub account, then in the Render
+dashboard choose **New -> Blueprint**, point it at the repo, and click
+**Apply** -- `render.yaml` in this repo configures the build/start
+commands and free plan automatically. (Without the blueprint, the
+equivalent manual setup is a Python web service with build command
+`pip install -r requirements.txt`, start command `python render_demo.py`,
+and an `SENTRYNET_DEMO_MODE=1` environment variable.)
+
 ## Testing it against real attack traffic
 
 Do this only in an isolated lab (a couple of VMs on a host-only/NAT

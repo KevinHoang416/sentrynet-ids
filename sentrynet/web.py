@@ -22,6 +22,7 @@ reach it can start or stop scans.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 import time
@@ -30,6 +31,22 @@ from typing import List, Optional
 from urllib.parse import parse_qs, urlparse
 
 from .engine import ScanEngine
+
+# Set by the free-hosted public demo entrypoint (render_demo.py), never by
+# normal local use. When on, the page explains itself to a visitor who has
+# no other context, and disables "Live interface" -- a hosted container
+# has no raw-socket access and no real network worth sniffing anyway, so
+# leaving it enabled would just be an inevitable, confusing error click
+# away instead of an honest "not available here".
+DEMO_MODE = os.environ.get("SENTRYNET_DEMO_MODE", "").strip().lower() in ("1", "true", "yes")
+
+_DEMO_BANNER_HTML = """
+  <div class="demo-banner">
+    <strong>Public demo</strong> -- continuously replaying a bundled sample
+    capture so there's always something to see. Live interface capture is
+    disabled here (no raw-socket access in a hosted container, and no real
+    network to sniff) -- clone the repo to run it against your own traffic.
+  </div>"""
 
 INDEX_HTML = """<!doctype html>
 <html lang="en">
@@ -90,6 +107,13 @@ INDEX_HTML = """<!doctype html>
     font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-dimmer);
     padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
   }
+
+  /* Public-demo banner (only present when SENTRYNET_DEMO_MODE is set) */
+  .demo-banner {
+    padding: 10px 24px; font-size: 12.5px; line-height: 1.5; color: var(--text-dim);
+    background: color-mix(in oklch, var(--brand) 10%, var(--panel)); border-bottom: 1px solid var(--border);
+  }
+  .demo-banner strong { color: var(--brand); }
 
   /* Scan control bar */
   .controlbar {
@@ -219,7 +243,7 @@ INDEX_HTML = """<!doctype html>
 </style>
 </head>
 <body>
-
+<!--DEMO_BANNER-->
   <div class="topbar">
     <div class="brand">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -246,8 +270,8 @@ INDEX_HTML = """<!doctype html>
     </div>
     <div class="scan-form" id="scan-form">
       <select id="scan-mode" class="ctl-select">
-        <option value="live">Live interface</option>
-        <option value="pcap">Pcap file</option>
+        <option value="live"<!--LIVE_OPTION_ATTRS-->>Live interface<!--LIVE_OPTION_LABEL_SUFFIX--></option>
+        <option value="pcap"<!--PCAP_OPTION_ATTRS-->>Pcap file</option>
       </select>
       <input id="scan-source" class="ctl-input" type="text" placeholder="Interface (blank = default)">
       <label class="realtime-label" id="realtime-label" style="display:none;">
@@ -587,6 +611,16 @@ setInterval(poll, 1000);
 </body>
 </html>
 """
+
+# Resolve the demo-mode placeholders once at import time -- normal local
+# use (SENTRYNET_DEMO_MODE unset) collapses every one of them to nothing,
+# so the page is byte-for-byte what it always was.
+INDEX_HTML = (
+    INDEX_HTML.replace("<!--DEMO_BANNER-->", _DEMO_BANNER_HTML if DEMO_MODE else "")
+    .replace("<!--LIVE_OPTION_ATTRS-->", ' disabled' if DEMO_MODE else "")
+    .replace("<!--LIVE_OPTION_LABEL_SUFFIX-->", " (disabled in this demo)" if DEMO_MODE else "")
+    .replace("<!--PCAP_OPTION_ATTRS-->", ' selected' if DEMO_MODE else "")
+)
 
 
 class WebDashboard:

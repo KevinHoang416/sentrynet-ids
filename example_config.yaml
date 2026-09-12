@@ -34,6 +34,12 @@ detectors:
     min_stddev: 1.0          # floor on baseline pkt/s stddev, so a very flat
                               # or fresh baseline can still register a spike
 
+  new_host:
+    # Flags the first time an IP address is seen in a scan, at INFO
+    # severity -- asset visibility, not a threat signal. Resets each time
+    # a scan (re)starts, so a fresh run re-announces every address.
+    enabled: true
+
   ml_anomaly:
     # Experimental unsupervised detector (Isolation Forest). Requires
     # scikit-learn + numpy. Off by default -- it needs a warm-up period on

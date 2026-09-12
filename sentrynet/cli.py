@@ -16,6 +16,7 @@ from .alerting import AlertManager
 from .config import load_config
 from .detectors.arp_spoof import ArpSpoofDetector
 from .detectors.base import BaseDetector
+from .detectors.new_host import NewHostDetector
 from .detectors.port_scan import PortScanDetector
 from .detectors.traffic_spike import TrafficSpikeDetector
 from .engine import ScanEngine
@@ -36,6 +37,9 @@ def build_detectors(cfg: Dict[str, Any]) -> List[BaseDetector]:
     if d_cfg["traffic_spike"]["enabled"]:
         c = {k: v for k, v in d_cfg["traffic_spike"].items() if k != "enabled"}
         detectors.append(TrafficSpikeDetector(**c))
+
+    if d_cfg["new_host"]["enabled"]:
+        detectors.append(NewHostDetector())
 
     if d_cfg["ml_anomaly"]["enabled"]:
         from .detectors.ml_anomaly import MLAnomalyDetector

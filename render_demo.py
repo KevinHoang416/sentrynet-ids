@@ -56,6 +56,23 @@ def loop_pcap_forever(engine: ScanEngine) -> None:
 
 def main() -> None:
     cfg = load_config(None)
+    # sample.pcap's ARP-spoof packets target 192.168.1.1 specifically so
+    # that, with it listed as a gateway, the demo shows a genuine CRITICAL
+    # alert (a spoofed gateway) rather than the plain HIGH a non-gateway
+    # ARP conflict gets -- this only affects the hosted demo's config, not
+    # the real defaults in config.py that everyone else runs with.
+    cfg["gateway_ips"] = ["192.168.1.1"]
+    # ml_anomaly is off by default (see config.py) because it needs a
+    # warm-up period on real traffic before its alerts mean anything on
+    # someone's own network. The demo has neither a real network nor a
+    # user waiting to tune it -- it just needs to show what a LOW alert
+    # looks like -- so it's turned on here with a much shorter warmup and
+    # retrain cadence, sized to fit inside one ~265-packet sample.pcap
+    # loop instead of the 500-packet default. Only affects this hosted
+    # demo's config, not the defaults everyone else runs with.
+    cfg["detectors"]["ml_anomaly"]["enabled"] = True
+    cfg["detectors"]["ml_anomaly"]["warmup"] = 40
+    cfg["detectors"]["ml_anomaly"]["retrain_every"] = 40
     alert_manager = build_alert_manager(cfg)
     engine = ScanEngine(detector_factory=lambda: build_detectors(cfg), alert_manager=alert_manager)
     detector_names = [d.name for d in build_detectors(cfg)]

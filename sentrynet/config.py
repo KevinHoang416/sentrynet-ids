@@ -30,6 +30,9 @@ DEFAULT_CONFIG: Dict[str, Any] = {
             "ewma_alpha": 0.3,
             "min_stddev": 1.0,
         },
+        "new_host": {
+            "enabled": True,
+        },
         "ml_anomaly": {
             "enabled": False,
             "buffer_size": 2000,

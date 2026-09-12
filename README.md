@@ -118,6 +118,15 @@ deviation so a very flat or brand-new baseline (near-zero variance) can
 still register a genuine jump instead of being unscoreable by division
 against ~0.
 
+**New host (`detectors/new_host.py`, INFO severity)** -- flags the first
+time an IP address is seen during a scan, whether from IP traffic or ARP.
+It's not a threat signal by itself (new devices joining a network is
+completely normal); it's asset visibility -- "a new device joined" rather
+than "you're being attacked" -- and it's the only detector here that
+reports at INFO. Each scan starts with a clean slate, so restarting one
+re-announces every address as "new" again; that's deliberate, since a
+scan is one observation window, not a permanent inventory.
+
 **ML anomaly (`detectors/ml_anomaly.py`, off by default, experimental)** --
 an Isolation Forest retrained periodically on a rolling buffer of simple
 per-packet features (size, protocol, ports, TTL). Included to show where
@@ -195,13 +204,13 @@ A bundled `sample.pcap` is included so you can see every detector fire
 without needing root, a live network, or an attack tool installed:
 
 ```bash
-# Fast replay: fires the port_scan and arp_spoof alerts immediately.
+# Fast replay: fires the port_scan, arp_spoof, and new_host alerts immediately.
 python run.py --pcap sample.pcap
 
-# Realtime replay: also fires the traffic_spike alert, plus the other two.
+# Realtime replay: also fires the traffic_spike alert.
 # Needed because traffic_spike buckets by wall-clock time, so its 5-second
 # windows only line up correctly when replay is paced to match -- this
-# takes about 35 real seconds since that's how long the recording is.
+# takes about a minute since that's how long the recording is.
 python run.py --pcap sample.pcap --realtime-replay
 
 # Same, with the browser dashboard at http://127.0.0.1:8787/ (opens
@@ -218,9 +227,10 @@ sudo python run.py -i eth0 --web
 ```
 
 With no `--config`, `sentrynet` runs with the built-in defaults in
-`config.py` (all three core detectors on; `ml_anomaly` and both
-dashboards off). Copy `example_config.yaml` and adjust thresholds, your
-gateway IP(s), and alerting sinks for your environment.
+`config.py` (`port_scan`, `arp_spoof`, `traffic_spike`, and `new_host` on;
+`ml_anomaly` and both dashboards off). Copy `example_config.yaml` and
+adjust thresholds, your gateway IP(s), and alerting sinks for your
+environment.
 
 The web dashboard (`--web`, or `web.enabled: true` in config) binds to
 `127.0.0.1` by default and has no authentication, so only change `host`
@@ -257,6 +267,16 @@ commands and free plan automatically. (Without the blueprint, the
 equivalent manual setup is a Python web service with build command
 `pip install -r requirements.txt`, start command `python render_demo.py`,
 and an `SENTRYNET_DEMO_MODE=1` environment variable.)
+
+`render_demo.py` also tunes a couple of things beyond the local defaults
+purely so the demo shows every severity within one loop of the sample
+capture: it lists `192.168.1.1` under `gateway_ips` (so the bundled
+ARP-spoof traffic reads as a hijacked gateway, CRITICAL, rather than a
+plain HIGH), and it turns `ml_anomaly` on with a much shorter
+`warmup`/`retrain_every` than the (still off-by-default) local defaults,
+so it produces a genuine LOW alert instead of needing hundreds of packets
+to warm up. Neither change affects anyone running Sentrynet normally --
+they're only set inside `render_demo.py`, not in `config.py`.
 
 ## Testing it against real attack traffic
 
